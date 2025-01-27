@@ -4,9 +4,17 @@ package com.project.TodoAPI.controller;
 import com.project.TodoAPI.model.Task;
 import com.project.TodoAPI.service.TaskService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import org.springframework.data.domain.Pageable;
+
+import java.util.HashMap;
+import java.util.Map;
+
 
 @RestController
 @RequestMapping("/todo")
@@ -40,5 +48,24 @@ public class TaskController {
         } else {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         }
+    }
+
+    @GetMapping()
+    public ResponseEntity<Map<String, Object>> getTasks
+            (@RequestParam(defaultValue = "1") int page,
+             @RequestParam(defaultValue = "10") int limit){
+
+        Pageable pageable = PageRequest.of(page - 1, limit);
+
+            Page<Task> taskPage = taskService.getAllTasks(pageable);
+
+            Map<String, Object> response = new HashMap<>();
+
+            response.put("data", taskPage.getContent());
+            response.put("page", page);
+            response.put("limit", limit);
+            response.put("total", taskPage.getTotalElements());
+
+            return new ResponseEntity<>(response, HttpStatus.OK);
     }
 }
