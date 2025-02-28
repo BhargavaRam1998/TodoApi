@@ -2,7 +2,9 @@ package com.project.TodoAPI.controller;
 
 
 import com.project.TodoAPI.model.Task;
+import com.project.TodoAPI.model.Users;
 import com.project.TodoAPI.service.TaskService;
+import com.project.TodoAPI.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -22,6 +24,20 @@ public class TaskController {
 
     @Autowired
     private TaskService taskService;
+
+    @Autowired
+    private UserService userService;
+
+    @PostMapping("/register")
+    public ResponseEntity<HashMap<String, String>> registerUser(@RequestBody Users user){
+        HashMap<String, String> response = userService.registerUser(user);
+
+        if (response.containsKey("token")) {
+            return new ResponseEntity<>(response, HttpStatus.CREATED);
+        } else {
+            return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
+        }
+    }
 
     @PostMapping("/task")
     public ResponseEntity<Task> addTask(@RequestBody Task task){
