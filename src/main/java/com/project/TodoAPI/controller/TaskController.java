@@ -75,9 +75,20 @@ public class TaskController {
     }
 
     @GetMapping()
-    public ResponseEntity<Map<String, Object>> getTasks
+    public ResponseEntity<?> getTasks
             (@RequestParam(defaultValue = "1") int page,
-             @RequestParam(defaultValue = "10") int limit){
+             @RequestParam(defaultValue = "10") int limit,
+             HttpServletRequest request){
+
+        String token = request.getHeader("Authorization");
+
+        if (token != null && token.startsWith("Bearer ")) {
+            token = token.substring(7);
+        }
+
+        if(!validateToken(token)) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("{\"message\": \"Unauthorized\"}");
+        }
 
         Pageable pageable = PageRequest.of(page - 1, limit);
 
