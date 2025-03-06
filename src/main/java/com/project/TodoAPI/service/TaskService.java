@@ -4,6 +4,7 @@ package com.project.TodoAPI.service;
 import com.project.TodoAPI.model.Task;
 import com.project.TodoAPI.repo.TaskRepo;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Service;
 

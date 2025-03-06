@@ -1,17 +1,12 @@
 package com.project.TodoAPI.service;
 
+import com.project.TodoAPI.Config.JwtUtil;
 import com.project.TodoAPI.model.Users;
 import com.project.TodoAPI.repo.UserRepo;
-import io.jsonwebtoken.SignatureAlgorithm;
-import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-import io.jsonwebtoken.Jwts;
 
-
-import java.security.Key;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.Optional;
 
@@ -24,8 +19,9 @@ public class UserService {
     @Autowired
     private PasswordEncoder passwordEncoder;
 
-    private final Key SECRET_KEY = Keys.secretKeyFor(SignatureAlgorithm.HS256);
-    ;
+    @Autowired
+    private JwtUtil jwtUtil;
+
     public HashMap<String, String> registerUser(Users user) {
         HashMap<String, String> response = new HashMap<>();
        Optional<Users> existingUser =  userRepo.findByEmail(user.getEmail());
@@ -39,12 +35,7 @@ public class UserService {
        user.setPassword(passwordEncoder.encode(user.getPassword()));
        userRepo.save(user);
 
-        String token = Jwts.builder()
-                .setSubject(user.getEmail())
-                .setIssuedAt(new Date())
-                .setExpiration(new Date(System.currentTimeMillis() + 1000 * 60 * 60))
-                .signWith(SignatureAlgorithm.HS256, SECRET_KEY)
-                .compact();
+       String token = jwtUtil.generateToken(user.getEmail());
 
         response.put("token", token);
         return response;

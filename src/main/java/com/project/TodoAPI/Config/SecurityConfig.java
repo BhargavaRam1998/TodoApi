@@ -19,7 +19,7 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http.csrf(csrf -> csrf.disable()) // Disable CSRF (only for development purposes)
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/todo/register").permitAll()
+                        .requestMatchers("/register").permitAll()
                         .requestMatchers("/todo/**").permitAll()
                         .anyRequest().permitAll()
                 )
@@ -27,4 +27,5 @@ public class SecurityConfig {
 
         return http.build();
     }
+
 }

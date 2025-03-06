@@ -1,10 +1,10 @@
 package com.project.TodoAPI.controller;
 
 
+import com.project.TodoAPI.Config.JwtUtil;
 import com.project.TodoAPI.model.Task;
-import com.project.TodoAPI.model.Users;
 import com.project.TodoAPI.service.TaskService;
-import com.project.TodoAPI.service.UserService;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -26,37 +26,45 @@ public class TaskController {
     private TaskService taskService;
 
     @Autowired
-    private UserService userService;
-
-    @PostMapping("/register")
-    public ResponseEntity<HashMap<String, String>> registerUser(@RequestBody Users user){
-        HashMap<String, String> response = userService.registerUser(user);
-
-        if (response.containsKey("token")) {
-            return new ResponseEntity<>(response, HttpStatus.CREATED);
-        } else {
-            return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
-        }
-    }
+    private JwtUtil jwtUtil;
 
     @PostMapping("/task")
-    public ResponseEntity<Task> addTask(@RequestBody Task task){
+    public ResponseEntity<?> addTask(@RequestBody Task task, HttpServletRequest request){
+
+        String token = request.getHeader("Authorization");
+
+        if (token != null && token.startsWith("Bearer ")) {
+            token = token.substring(7);
+        }
+        if (!validateToken(token)) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("{\"message\": \"Unauthorized\"}");
+        }
         Task createdTask = taskService.addTask(task);
+
         return new ResponseEntity<>(createdTask, HttpStatus.CREATED);
+    }
+    private boolean validateToken(String token) {
+        try {
+            String email = jwtUtil.extractEmail(token);
+            return email!= null;
+        } catch (Exception e) {
+            return false;
+        }
     }
 
     @PutMapping("/update/{id}")
     public ResponseEntity<Task> updateTask(@PathVariable int id, @RequestBody Task task){
         Task updatedTask = taskService.updateTask(id, task);
         if (updatedTask != null) {
-            return new ResponseEntity<>(updatedTask, HttpStatus.OK);
+            return new ResponseEntity<>(updatedTask, HttpStatus.OK); //called as constructor based approach
+            //return ResponseEntity.status(HttpStatus.OK).body(updatedTask); --same usage as above, called as builder based approach
         } else {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         }
     }
 
     @PutMapping("/delete/{id}")
-    public ResponseEntity<?>deleteTask(@PathVariable int id){
+    public ResponseEntity<Void>deleteTask(@PathVariable int id){
         boolean isDeleted = taskService.deleteTask(id);
 
         if (isDeleted) {
