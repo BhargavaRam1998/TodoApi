@@ -16,13 +16,15 @@ public class TaskService {
     @Autowired
     private TaskRepo taskRepo;
 
-    public Task addTask(Task task) {
+    public Task addTask(Task task, String email) {
+        task.setCreatedBy(email);
         return taskRepo.save(task);
     }
 
-    public Task updateTask(int id, Task task) {
+    public Task updateTask(int id, Task task, String email) {
         if (taskRepo.existsById(id)){
             task.setId(id);
+            task.setCreatedBy(email);
             return taskRepo.save(task);
         } else {
             return null;

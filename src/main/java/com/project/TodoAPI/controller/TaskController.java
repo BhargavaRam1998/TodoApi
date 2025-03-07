@@ -3,6 +3,7 @@ package com.project.TodoAPI.controller;
 
 import com.project.TodoAPI.Config.JwtUtil;
 import com.project.TodoAPI.model.Task;
+import com.project.TodoAPI.repo.TaskRepo;
 import com.project.TodoAPI.service.TaskService;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,6 +17,7 @@ import org.springframework.data.domain.Pageable;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 
 
 @RestController
@@ -24,6 +26,9 @@ public class TaskController {
 
     @Autowired
     private TaskService taskService;
+
+    @Autowired
+    private TaskRepo taskRepo;
 
     @Autowired
     private JwtUtil jwtUtil;
@@ -39,7 +44,10 @@ public class TaskController {
         if (!validateToken(token)) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("{\"message\": \"Unauthorized\"}");
         }
-        Task createdTask = taskService.addTask(task);
+
+        String email = jwtUtil.extractEmail(token);
+
+        Task createdTask = taskService.addTask(task, email);
 
         return new ResponseEntity<>(createdTask, HttpStatus.CREATED);
     }
@@ -53,8 +61,29 @@ public class TaskController {
     }
 
     @PutMapping("/update/{id}")
-    public ResponseEntity<Task> updateTask(@PathVariable int id, @RequestBody Task task){
-        Task updatedTask = taskService.updateTask(id, task);
+    public ResponseEntity<?> updateTask(@PathVariable int id, @RequestBody Task task, HttpServletRequest request){
+
+        String token = request.getHeader("Authorization");
+
+        if (token != null && token.startsWith("Bearer ")) {
+            token = token.substring(7);
+        }
+
+        String currentUser = jwtUtil.extractEmail(token);
+        // Fetch the existing task from the database
+        Optional<Task> existingTask = taskRepo.findById(id);
+
+        if (existingTask.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("{\"message\": \"Task Not Found\"}");
+        }
+
+        // Check if the logged-in user is the task owner
+        if (!currentUser.equals(existingTask.get().getCreatedBy())) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("{\"message\": \"Unauthorized\"}");
+        }
+
+        Task updatedTask = taskService.updateTask(id, task, currentUser);
+
         if (updatedTask != null) {
             return new ResponseEntity<>(updatedTask, HttpStatus.OK); //called as constructor based approach
             //return ResponseEntity.status(HttpStatus.OK).body(updatedTask); --same usage as above, called as builder based approach
@@ -64,7 +93,27 @@ public class TaskController {
     }
 
     @PutMapping("/delete/{id}")
-    public ResponseEntity<Void>deleteTask(@PathVariable int id){
+    public ResponseEntity<?>deleteTask(@PathVariable int id, HttpServletRequest request){
+
+        String token = request.getHeader("Authorization");
+
+        if (token != null && token.startsWith("Bearer ")) {
+            token = token.substring(7);
+        }
+
+        String currentUser = jwtUtil.extractEmail(token);
+        // Fetch the existing task from the database
+        Optional<Task> existingTask = taskRepo.findById(id);
+
+        if (existingTask.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("{\"message\": \"Task Not Found\"}");
+        }
+
+        // Check if the logged-in user is the task owner
+        if (!currentUser.equals(existingTask.get().getCreatedBy())) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("{\"message\": \"Unauthorized\"}");
+        }
+
         boolean isDeleted = taskService.deleteTask(id);
 
         if (isDeleted) {
