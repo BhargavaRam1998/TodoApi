@@ -43,4 +43,5 @@ public class TaskService {
     public Page<Task> getAllTasks(Pageable pageable) {
         return taskRepo.findAll(pageable);
     }
+
 }

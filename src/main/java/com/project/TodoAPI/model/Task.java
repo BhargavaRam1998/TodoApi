@@ -1,10 +1,14 @@
 package com.project.TodoAPI.model;
 
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.RequiredArgsConstructor;
 
 @Data
 @Entity
+@AllArgsConstructor
+@RequiredArgsConstructor
 public class Task {
 
     @Id

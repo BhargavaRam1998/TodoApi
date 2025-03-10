@@ -93,7 +93,7 @@ public class TaskController {
     }
 
     @PutMapping("/delete/{id}")
-    public ResponseEntity<?>deleteTask(@PathVariable int id, HttpServletRequest request){
+    public ResponseEntity<?> deleteTask(@PathVariable int id, HttpServletRequest request){
 
         String token = request.getHeader("Authorization");
 
