@@ -32,4 +32,13 @@ public class JwtUtil {
         Claims claims = claimsJws.getBody();
         return claims.getSubject();
     }
+
+    public boolean validateToken(String token) {
+        try {
+            String email = extractEmail(token);
+            return email!= null;
+        } catch (Exception e) {
+            return false;
+        }
+    }
 }

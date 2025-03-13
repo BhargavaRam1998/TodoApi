@@ -41,7 +41,7 @@ public class TaskController {
         if (token != null && token.startsWith("Bearer ")) {
             token = token.substring(7);
         }
-        if (!validateToken(token)) {
+        if (!jwtUtil.validateToken(token)) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("{\"message\": \"Unauthorized\"}");
         }
 
@@ -50,14 +50,6 @@ public class TaskController {
         Task createdTask = taskService.addTask(task, email);
 
         return new ResponseEntity<>(createdTask, HttpStatus.CREATED);
-    }
-    private boolean validateToken(String token) {
-        try {
-            String email = jwtUtil.extractEmail(token);
-            return email!= null;
-        } catch (Exception e) {
-            return false;
-        }
     }
 
     @PutMapping("/update/{id}")
@@ -135,7 +127,7 @@ public class TaskController {
             token = token.substring(7);
         }
 
-        if(!validateToken(token)) {
+        if(!jwtUtil.validateToken(token)) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("{\"message\": \"Unauthorized\"}");
         }
 
