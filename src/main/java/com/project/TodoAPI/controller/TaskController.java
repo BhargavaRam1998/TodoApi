@@ -70,7 +70,7 @@ public class TaskController {
         }
 
         // Check if the logged-in user is the task owner
-        if (!currentUser.equals(existingTask.get().getCreatedBy())) {
+        if (currentUser == null || !currentUser.equals(existingTask.get().getCreatedBy())) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("{\"message\": \"Unauthorized\"}");
         }
 
