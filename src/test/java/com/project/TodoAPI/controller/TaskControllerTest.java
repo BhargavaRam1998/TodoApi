@@ -104,9 +104,9 @@ class TaskControllerTest {
         updatedTask.setCreatedBy("ram@email.com");
 
 
-        Mockito.when(jwtUtil.extractEmail(token)).thenReturn("ram@email.com");
-        Mockito.when(taskRepo.findById(1)).thenReturn(Optional.of(existingTask));
-        Mockito.when(taskService.updateTask(eq(1), Mockito.any(Task.class), eq("ram@email.com"))).thenReturn(updatedTask);
+        when(jwtUtil.extractEmail(token)).thenReturn("ram@email.com");
+        when(taskRepo.findById(1)).thenReturn(Optional.of(existingTask));
+        when(taskService.updateTask(eq(1), Mockito.any(Task.class), eq("ram@email.com"))).thenReturn(updatedTask);
 
         mockMvc.perform(put("/todo/update/{id}", 1)
                 .header("Authorization", "Bearer " + token)
@@ -128,9 +128,9 @@ class TaskControllerTest {
         existingTask.setDescription("Sample Task Description");
         existingTask.setCreatedBy("ram@email.com");
 
-        Mockito.when(jwtUtil.extractEmail(token)).thenReturn("ram@email.com");
-        Mockito.when(taskRepo.findById(1)).thenReturn(Optional.of(existingTask));
-        Mockito.when(taskService.updateTask(eq(1), Mockito.any(Task.class), eq("ram@email.com"))).thenReturn(null);
+        when(jwtUtil.extractEmail(token)).thenReturn("ram@email.com");
+        when(taskRepo.findById(1)).thenReturn(Optional.of(existingTask));
+        when(taskService.updateTask(eq(1), Mockito.any(Task.class), eq("ram@email.com"))).thenReturn(null);
 
         mockMvc.perform(put("/todo/update/{id}", 1)
                 .header("Authorization", "Bearer " + token)
@@ -149,8 +149,8 @@ class TaskControllerTest {
         existingTask.setCreatedBy("ram@email.com");
 
 
-        Mockito.when(jwtUtil.extractEmail(Mockito.any())).thenReturn(null);
-        Mockito.when(taskRepo.findById(1)).thenReturn(Optional.of(existingTask));
+        when(jwtUtil.extractEmail(Mockito.any())).thenReturn(null);
+        when(taskRepo.findById(1)).thenReturn(Optional.of(existingTask));
 
         mockMvc.perform(put("/todo/update/{id}", 1)
                 .contentType(MediaType.APPLICATION_JSON)
@@ -168,8 +168,8 @@ class TaskControllerTest {
         existingTask.setDescription("Sample Task Description");
         existingTask.setCreatedBy("ram@email.com");
 
-        Mockito.when(jwtUtil.extractEmail(Mockito.any())).thenReturn(null);
-        Mockito.when(taskRepo.findById(1)).thenReturn(Optional.of(existingTask));
+        when(jwtUtil.extractEmail(Mockito.any())).thenReturn(null);
+        when(taskRepo.findById(1)).thenReturn(Optional.of(existingTask));
 
         mockMvc.perform(put("/todo/update/{id}", 1)
                 .header("Authorization", "Bearer " )
@@ -185,8 +185,8 @@ class TaskControllerTest {
     void updateTaskShouldNotUpdateTaskIfExistingTaskIsEmpty() throws Exception {
         String token = "sample_token";
 
-        Mockito.when(jwtUtil.extractEmail(token)).thenReturn("ram@email.com");
-        Mockito.when(taskRepo.findById(1)).thenReturn(Optional.empty());
+        when(jwtUtil.extractEmail(token)).thenReturn("ram@email.com");
+        when(taskRepo.findById(1)).thenReturn(Optional.empty());
 
         mockMvc.perform(put("/todo/update/{id}", 1)
                         .header("Authorization", "Bearer " + token)
@@ -195,6 +195,94 @@ class TaskControllerTest {
                 .andExpect(status().isNotFound())
                 .andExpect(content().json("{\"message\": \"Task Not Found\"}"));
 
+    }
+
+    @Test
+    void deleteTaskShouldDeleteTask() throws Exception {
+        String token = "sample_token";
+        Task existingTask = new Task();
+        existingTask.setId(1);
+        existingTask.setName("sample task 1");
+        existingTask.setDescription("sample task description");
+        existingTask.setCreatedBy("ram@sample.com");
+
+        when(jwtUtil.extractEmail(token)).thenReturn("ram@sample.com");
+        when(taskRepo.findById(1)).thenReturn(Optional.of(existingTask));
+        when(taskService.deleteTask(1)).thenReturn(true);
+
+        mockMvc.perform(put("/todo/delete/{id}", 1)
+                .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk());
+
+
+    }
+
+    @Test
+    void deleteTaskShouldNotDeleteIfTaskDoesNotExistById() throws Exception {
+        String token = "sample_token";
+        Task existingTask = new Task();
+        existingTask.setId(1);
+        existingTask.setName("sample task 1");
+        existingTask.setDescription("sample task description");
+        existingTask.setCreatedBy("ram@sample.com");
+
+        when(jwtUtil.extractEmail(token)).thenReturn("ram@sample.com");
+        when(taskRepo.findById(1)).thenReturn(Optional.of(existingTask));
+        when(taskService.deleteTask(1)).thenReturn(false);
+
+        mockMvc.perform(put("/todo/delete/{id}", 1)
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isNotFound());
+
+    }
+
+    @Test
+    void deleteTaskShouldNotDeleteTaskIfAuthorizationHeaderIsMissing() throws Exception {
+        Task existingTask = new Task();
+        existingTask.setId(1);
+        existingTask.setName("sample task 1");
+        existingTask.setDescription("sample task description");
+        existingTask.setCreatedBy("ram@sample.com");
+
+        when(jwtUtil.extractEmail(Mockito.any())).thenReturn(null);
+        when(taskRepo.findById(1)).thenReturn(Optional.of(existingTask));
+
+        mockMvc.perform(put("/todo/delete/{id}", 1))
+                .andExpect(status().isUnauthorized())
+                .andExpect(content().json("{\"message\": \"Unauthorized\"}"));
+
+    }
+
+    @Test
+    void deleteTaskShouldNotHappenForUnauthorizedUsers() throws Exception {
+        String token = "sample_token";
+        Task existingTask = new Task();
+        existingTask.setId(1);
+        existingTask.setName("sample task 1");
+        existingTask.setDescription("sample task description");
+        existingTask.setCreatedBy("actualowner@gmail.com");
+
+        when(jwtUtil.extractEmail(Mockito.any())).thenReturn("ram@sample.com");
+        when(taskRepo.findById(1)).thenReturn(Optional.of(existingTask));
+
+        mockMvc.perform(put("/todo/delete/{id}", 1)
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isUnauthorized())
+                .andExpect(content().json("{\"message\": \"Unauthorized\"}"));
+
+    }
+
+    @Test
+    void deleteTaskShouldNotHappenIfExistingTaskIsEmpty() throws Exception {
+        String token = "sample_token";
+
+        when(jwtUtil.extractEmail(token)).thenReturn("ram@sample.com");
+        when(taskRepo.findById(1)).thenReturn(Optional.empty());
+
+        mockMvc.perform(put("/todo/delete/{id}", 1)
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isNotFound())
+                .andExpect(content().json("{\"message\": \"Task Not Found\"}"));
     }
 
 }
