@@ -12,10 +12,16 @@ import org.mockito.Mock;
 
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
+import java.util.Arrays;
+import java.util.List;
 import java.util.Optional;
 
 import static org.mockito.Mockito.*;
@@ -283,6 +289,56 @@ class TaskControllerTest {
                         .header("Authorization", "Bearer " + token))
                 .andExpect(status().isNotFound())
                 .andExpect(content().json("{\"message\": \"Task Not Found\"}"));
+    }
+
+    @Test
+    void getTasksShouldFetchAllTheTasks() throws Exception {
+
+        String token = "sample_token";
+
+        Task task1 = new Task();
+        task1.setId(1);
+        task1.setDescription("Sample Task Description");
+        task1.setName("sample task 1");
+        task1.setCreatedBy("sample@email.com");
+
+        Task task2 = new Task();
+        task2.setId(2);
+        task2.setDescription("Sample Task Description2");
+        task2.setName("sample task 2");
+        task2.setCreatedBy("sample2@email.com");
+
+
+        List<Task> taskList = Arrays.asList(task1, task2);
+        Pageable pageable = PageRequest.of(0, 10);
+
+        Page<Task> taskPage = new PageImpl<>(taskList, pageable, taskList.size());
+
+        when(jwtUtil.validateToken(Mockito.any())).thenReturn(true);
+        when(taskService.getAllTasks(Mockito.any(Pageable.class))).thenReturn(taskPage);
+
+        mockMvc.perform(get("/todo")
+                .header("Authorization", "Bearer " + token)
+                .param("page", "1")
+                .param("limit", "10")
+                .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.length()").value(2))
+                .andExpect(jsonPath("$.page").value(1))
+                .andExpect(jsonPath("$.limit").value(10))
+                .andExpect(jsonPath("$.total").value(2));
+    }
+
+    @Test
+    void getTasksShouldNotFetchAllTheTasksIfAuthorizationIsMissing() throws Exception {
+
+        when(jwtUtil.validateToken(Mockito.any())).thenReturn(false);
+
+        mockMvc.perform(get("/todo")
+                .param("page", "1")
+                .param("limit", "10"))
+                .andExpect(status().isUnauthorized())
+                .andExpect(content().json("{\"message\": \"Unauthorized\"}"));
     }
 
 }
